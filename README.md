@@ -132,10 +132,25 @@ cron **no se dispara si el proceso está dormido**. Opciones:
 - Un cron externo (p. ej. cron-job.org) que llame a `POST /run?token=...` a las
   07:00 en vez de depender de node-cron.
 
-## Gmail como SMTP (rápido para pruebas)
+## Envío de correo: Brevo (recomendado) o SMTP
 
-Usa `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER` tu correo y
-`SMTP_PASS` una **contraseña de aplicación** (no la normal; requiere 2FA).
+`EMAIL_PROVIDER` decide cómo se envía:
+
+- **`brevo` (recomendado en Railway)**: envía por **API HTTP**, así que no usa los
+  puertos SMTP que Railway/Render suelen bloquear (causa del error
+  `Connection timeout`). Pasos:
+  1. Crea cuenta gratis en https://app.brevo.com (300 emails/día gratis).
+  2. **Senders & IP → Senders**: añade y **verifica** tu correo (el de
+     `EMAIL_FROM`). Te llega un email de confirmación.
+  3. **SMTP & API → API Keys**: crea una key `xkeysib-...` → ponla en
+     `BREVO_API_KEY`.
+  4. Variables: `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY=...`, `EMAIL_FROM`,
+     `EMAIL_TO_MAN`, `EMAIL_TO_WOMAN`.
+
+- **`smtp`**: Nodemailer clásico. Para Gmail: `SMTP_HOST=smtp.gmail.com`,
+  `SMTP_PORT=587`, `SMTP_USER` tu correo y `SMTP_PASS` una **contraseña de
+  aplicación** (requiere verificación en 2 pasos). ⚠️ En Railway suele fallar con
+  `Connection timeout` porque bloquean SMTP; usa `brevo` allí.
 
 ## Migrar imágenes a un bucket (opcional)
 

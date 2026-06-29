@@ -24,6 +24,8 @@ function bool(name, fallback = false) {
 const textProvider = optional('AI_TEXT_PROVIDER', 'groq').toLowerCase();
 // Proveedor de imagenes: 'pollinations' (gratis), 'openai' o 'none'.
 const imageProvider = optional('IMAGE_PROVIDER', 'pollinations').toLowerCase();
+// Proveedor de email: 'brevo' (API HTTP, recomendado) o 'smtp'.
+const emailProvider = optional('EMAIL_PROVIDER', 'smtp').toLowerCase();
 
 const TEXT_DEFAULTS = {
   groq: { baseURL: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile' },
@@ -56,18 +58,23 @@ export const config = {
     // OPENAI_API_KEY solo se exige si se generan imagenes con openai.
     openaiKey: imageProvider === 'openai' ? required('OPENAI_API_KEY') : optional('OPENAI_API_KEY', ''),
   },
-  smtp: {
-    host: required('SMTP_HOST'),
-    port: Number(optional('SMTP_PORT', '587')),
-    user: required('SMTP_USER'),
-    pass: required('SMTP_PASS'),
-    secure: Number(optional('SMTP_PORT', '587')) === 465,
-  },
+  // Proveedor de envio: 'brevo' (API HTTP, recomendado en Railway) | 'smtp'.
   email: {
+    provider: emailProvider,
     from: required('EMAIL_FROM'),
     toMan: required('EMAIL_TO_MAN'),
     toWoman: required('EMAIL_TO_WOMAN'),
     alert: optional('ALERT_EMAIL', ''),
+    // Brevo (solo si EMAIL_PROVIDER=brevo)
+    brevoKey: emailProvider === 'brevo' ? required('BREVO_API_KEY') : optional('BREVO_API_KEY', ''),
+    // SMTP (solo si EMAIL_PROVIDER=smtp)
+    smtp: {
+      host: emailProvider === 'smtp' ? required('SMTP_HOST') : optional('SMTP_HOST', ''),
+      port: Number(optional('SMTP_PORT', '587')),
+      user: emailProvider === 'smtp' ? required('SMTP_USER') : optional('SMTP_USER', ''),
+      pass: emailProvider === 'smtp' ? required('SMTP_PASS') : optional('SMTP_PASS', ''),
+      secure: Number(optional('SMTP_PORT', '587')) === 465,
+    },
   },
   cron: {
     time: optional('CRON_TIME', '0 7 * * *'),
