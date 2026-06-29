@@ -31,6 +31,16 @@ export async function runDailyJob({ force = false } = {}) {
       await savePlan(date, { plan, images, generatedAt: new Date().toISOString() });
     }
 
+    // Log estructura del plan para diagnostico (sin datos sensibles)
+    logger.info({
+      date,
+      nutritionKeys: Object.keys(plan.nutrition ?? {}),
+      hasBreakfastMan: !!plan.nutrition?.breakfast_man?.name,
+      hasBreakfastWoman: !!plan.nutrition?.breakfast_woman?.name,
+      hasLunch: !!plan.nutrition?.lunch?.name,
+      hasSnack: !!plan.nutrition?.snack?.name,
+    }, 'Estructura del plan antes de renderizar');
+
     const emailMan = renderEmailMan(plan, images);
     const emailWoman = renderEmailWoman(plan, images);
     const info = await sendEmails({ emailMan, emailWoman });

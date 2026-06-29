@@ -11,7 +11,10 @@ const mealSchema = z.object({
 const snackSchema = z.object({
   name: z.string().min(1),
   ingredients: z.array(z.string().min(1)).min(1),
-  description: z.string().min(1),
+  // Groq a veces usa 'note' o 'instructions'; aceptamos cualquiera
+  description: z.string().optional().default(''),
+  note: z.string().optional(),
+  instructions: z.string().optional(),
 });
 
 const exerciseBlockSchema = z.object({

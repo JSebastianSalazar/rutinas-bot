@@ -29,32 +29,37 @@ function image(url, alt) {
 }
 
 function mealCard(m, imgUrl = null, imgAlt = '') {
+  if (!m) return '<p style="color:#9ca3af;font-size:13px;">Comida no disponible.</p>';
   return `
-    <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#111827;">${esc(m.name)}</p>
-    <p style="margin:0 0 10px 0;font-size:13px;color:#059669;font-weight:600;">Proteina aprox.: ${esc(m.protein_estimate)}</p>
+    <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#111827;">${esc(m.name ?? '')}</p>
+    <p style="margin:0 0 10px 0;font-size:13px;color:#059669;font-weight:600;">Proteina aprox.: ${esc(m.protein_estimate ?? '')}</p>
     ${imgUrl ? image(imgUrl, imgAlt) : ''}
     <p style="margin:0 0 2px 0;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Ingredientes</p>
-    ${list(m.ingredients)}
+    ${list(m.ingredients ?? [])}
     <p style="margin:8px 0 2px 0;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Preparacion</p>
-    ${list(m.steps)}`;
+    ${list(m.steps ?? [])}`;
 }
 
 function snackCard(s) {
+  if (!s) return '<p style="color:#9ca3af;font-size:13px;">Merienda no disponible.</p>';
+  // Groq a veces devuelve 'note' o 'instructions' en lugar de 'description'
+  const desc = s.description ?? s.note ?? s.instructions ?? '';
   return `
-    <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#111827;">${esc(s.name)}</p>
-    <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">${esc(s.description)}</p>
-    ${list(s.ingredients)}`;
+    <p style="margin:0 0 4px 0;font-size:15px;font-weight:700;color:#111827;">${esc(s.name ?? '')}</p>
+    <p style="margin:0 0 10px 0;font-size:13px;color:#374151;">${esc(desc)}</p>
+    ${list(s.ingredients ?? [])}`;
 }
 
 function strengthBlock(block, imgUrl = null, imgAlt = '') {
+  if (!block) return '<p style="color:#9ca3af;font-size:13px;">Rutina no disponible.</p>';
   return `
     <p style="margin:0 0 2px 0;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Calentamiento</p>
-    ${list(block.warmup)}
+    ${list(block.warmup ?? [])}
     <p style="margin:8px 0 2px 0;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Ejercicios</p>
-    ${list(block.exercises)}
+    ${list(block.exercises ?? [])}
     ${imgUrl ? image(imgUrl, imgAlt) : ''}
     <p style="margin:8px 0 2px 0;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">Vuelta a la calma</p>
-    ${list(block.cooldown)}`;
+    ${list(block.cooldown ?? [])}`;
 }
 
 function baseHtml(plan, headerColor, greeting, sectionsHtml) {
