@@ -5,9 +5,15 @@ import { saveImage } from './store.js';
 import { logger } from './logger.js';
 
 function imagePrompts(plan) {
+  // Usa el almuerzo compartido como imagen de comida principal.
+  // Fallback a breakfast_man si lunch no existe (compatibilidad).
+  const mainMealName =
+    plan.nutrition?.lunch?.name ??
+    plan.nutrition?.breakfast_man?.name ??
+    'comida saludable casera';
   return {
     meal:
-      `Fotografia cenital realista y apetitosa de ${plan.nutrition.meal1.name}, ` +
+      `Fotografia cenital realista y apetitosa de ${mainMealName}, ` +
       `comida casera saludable en un plato, luz natural, estilo fotografia gastronomica, sin texto.`,
     strengthMan:
       'Ilustracion limpia y motivadora de un hombre adulto haciendo una rutina de fuerza en casa ' +
