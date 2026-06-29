@@ -20,11 +20,41 @@ function bool(name, fallback = false) {
   return value === 'true' || value === '1' || value === 'yes';
 }
 
-export const config = {
-  openai: {
+// Proveedor de texto: 'groq' (gratis) u 'openai'.
+const textProvider = optional('AI_TEXT_PROVIDER', 'groq').toLowerCase();
+// Proveedor de imagenes: 'pollinations' (gratis), 'openai' o 'none'.
+const imageProvider = optional('IMAGE_PROVIDER', 'pollinations').toLowerCase();
+
+const TEXT_DEFAULTS = {
+  groq: { baseURL: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile' },
+  openai: { baseURL: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+};
+
+function textConfig() {
+  if (textProvider === 'groq') {
+    return {
+      provider: 'groq',
+      apiKey: required('GROQ_API_KEY'),
+      baseURL: TEXT_DEFAULTS.groq.baseURL,
+      model: optional('GROQ_MODEL', TEXT_DEFAULTS.groq.model),
+    };
+  }
+  // openai
+  return {
+    provider: 'openai',
     apiKey: required('OPENAI_API_KEY'),
-    textModel: optional('OPENAI_TEXT_MODEL', 'gpt-4o-mini'),
-    imageModel: optional('OPENAI_IMAGE_MODEL', 'gpt-image-1'),
+    baseURL: TEXT_DEFAULTS.openai.baseURL,
+    model: optional('OPENAI_TEXT_MODEL', TEXT_DEFAULTS.openai.model),
+  };
+}
+
+export const config = {
+  text: textConfig(),
+  image: {
+    provider: imageProvider, // pollinations | openai | none
+    openaiModel: optional('OPENAI_IMAGE_MODEL', 'gpt-image-1'),
+    // OPENAI_API_KEY solo se exige si se generan imagenes con openai.
+    openaiKey: imageProvider === 'openai' ? required('OPENAI_API_KEY') : optional('OPENAI_API_KEY', ''),
   },
   smtp: {
     host: required('SMTP_HOST'),
@@ -48,7 +78,7 @@ export const config = {
     publicBaseUrl: optional('PUBLIC_BASE_URL', 'http://localhost:3000').replace(/\/$/, ''),
   },
   features: {
-    aiImages: bool('ENABLE_AI_IMAGES', true),
+    aiImages: imageProvider !== 'none',
     historyLookbackDays: Number(optional('HISTORY_LOOKBACK_DAYS', '5')),
   },
 };

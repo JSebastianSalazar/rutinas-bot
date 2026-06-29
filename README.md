@@ -45,6 +45,20 @@ store ── guarda data/YYYY-MM-DD.json (historial, evita repetir comidas y reg
 - **Reintentos con backoff** en OpenAI y SMTP; alerta opcional por email si el
   job falla; lock para no solapar ejecuciones.
 
+## Proveedores de IA (configurable y GRATIS)
+
+Por defecto el proyecto usa opciones **gratuitas**:
+
+- **Texto → Groq** (`AI_TEXT_PROVIDER=groq`): modelos Llama, capa gratuita, API
+  compatible con OpenAI. Saca tu key gratis en https://console.groq.com/keys
+  (sin tarjeta). Alternativa: `AI_TEXT_PROVIDER=openai` (de pago, requiere saldo).
+- **Imágenes → Pollinations** (`IMAGE_PROVIDER=pollinations`): gratis, **sin API
+  key**; se incrustan por URL directa en el email. Alternativas:
+  `IMAGE_PROVIDER=openai` (de pago) o `IMAGE_PROVIDER=none` (sin imágenes).
+
+> ℹ️ ChatGPT Plus ($20/mes) NO sirve para la API. Son productos distintos. Por
+> eso aquí usamos Groq (gratis) en lugar de la API de pago de OpenAI.
+
 ## Instalación
 
 Requiere **Node.js 20+**.

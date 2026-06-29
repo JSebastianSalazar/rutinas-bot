@@ -2,7 +2,12 @@ import OpenAI from 'openai';
 import { config } from './config.js';
 import { logger } from './logger.js';
 
-export const openai = new OpenAI({ apiKey: config.openai.apiKey });
+// Cliente de TEXTO: apunta a Groq (gratis) u OpenAI segun AI_TEXT_PROVIDER.
+// Ambos exponen una API compatible con el SDK de OpenAI.
+export const textClient = new OpenAI({
+  apiKey: config.text.apiKey,
+  baseURL: config.text.baseURL,
+});
 
 /**
  * Ejecuta una funcion async con reintentos y backoff exponencial.

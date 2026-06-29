@@ -1,4 +1,4 @@
-import { openai, withRetry } from './openaiClient.js';
+import { textClient, withRetry } from './openaiClient.js';
 import { config, todayInTimezone, weekdayInTimezone } from './config.js';
 import { dailyPlanSchema, dailyPlanJsonSchema } from './schema.js';
 import { checkSafety } from './safetyRules.js';
@@ -31,7 +31,24 @@ CAMINAR (ambos): entre 30 y 60 minutos, divisible en 2 caminatas. Principiante 3
 
 SEGURIDAD: el campo safety_note debe recomendar consultar a un profesional si aparece mareo, dolor, cesarea reciente, baja produccion de leche, sangrado, lesion o enfermedad.
 
-Responde SIEMPRE en espanol, tono cercano y motivador, frases cortas. Devuelve EXCLUSIVAMENTE el JSON del schema, sin texto adicional.`;
+Responde SIEMPRE en espanol, tono cercano y motivador, frases cortas. Devuelve EXCLUSIVAMENTE un objeto JSON valido, sin texto adicional, sin markdown y sin bloques de codigo.
+
+El JSON debe tener EXACTAMENTE esta estructura (rellena los valores, respeta las claves):
+{
+  "title": "string",
+  "date": "YYYY-MM-DD",
+  "nutrition": {
+    "meal1": { "name": "string", "ingredients": ["string"], "steps": ["string"], "protein_estimate": "string" },
+    "meal2": { "name": "string", "ingredients": ["string"], "steps": ["string"], "protein_estimate": "string" },
+    "lactation_extra": { "name": "string", "ingredients": ["string"], "reason": "string" }
+  },
+  "walking": { "goal": "string", "instructions": "string" },
+  "strength_man": { "warmup": ["string"], "exercises": ["string"], "cooldown": ["string"] },
+  "strength_woman": { "warmup": ["string"], "exercises": ["string"], "cooldown": ["string"] },
+  "shopping_list": ["string"],
+  "hydration": "string",
+  "safety_note": "string"
+}`;
 
 function buildUserPrompt({ date, weekday, lastMeals }) {
   const avoid =
@@ -54,25 +71,29 @@ export async function generateDailyPlan({ date = todayInTimezone(), weekday = we
 
   const maxSafetyRetries = 2;
   for (let attempt = 0; attempt <= maxSafetyRetries; attempt++) {
+    // OpenAI soporta Structured Outputs (json_schema). Groq y otros usan el
+    // modo JSON generico (json_object) + el esqueleto descrito en el prompt.
+    const responseFormat =
+      config.text.provider === 'openai'
+        ? { type: 'json_schema', json_schema: dailyPlanJsonSchema }
+        : { type: 'json_object' };
+
     const completion = await withRetry(
       () =>
-        openai.chat.completions.create({
-          model: config.openai.textModel,
+        textClient.chat.completions.create({
+          model: config.text.model,
           temperature: 0.7,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userPrompt },
           ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: dailyPlanJsonSchema,
-          },
+          response_format: responseFormat,
         }),
-      { label: 'openai.chat.plan' },
+      { label: `${config.text.provider}.chat.plan` },
     );
 
     const content = completion.choices?.[0]?.message?.content;
-    if (!content) throw new Error('OpenAI no devolvio contenido para el plan.');
+    if (!content) throw new Error('El modelo no devolvio contenido para el plan.');
 
     let parsed;
     try {
