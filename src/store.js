@@ -56,8 +56,14 @@ export async function recentMealNames(lookbackDays = config.features.historyLook
       const raw = await fs.readFile(path.join(DATA_DIR, file), 'utf8');
       const data = JSON.parse(raw);
       const plan = data.plan ?? data;
-      if (plan?.nutrition?.meal1?.name) names.push(plan.nutrition.meal1.name);
-      if (plan?.nutrition?.meal2?.name) names.push(plan.nutrition.meal2.name);
+      const n = plan?.nutrition;
+      if (n?.breakfast_man?.name) names.push(n.breakfast_man.name);
+      if (n?.breakfast_woman?.name) names.push(n.breakfast_woman.name);
+      if (n?.lunch?.name) names.push(n.lunch.name);
+      if (n?.snack?.name) names.push(n.snack.name);
+      // compatibilidad con planes anteriores (meal1/meal2)
+      if (n?.meal1?.name) names.push(n.meal1.name);
+      if (n?.meal2?.name) names.push(n.meal2.name);
     } catch (err) {
       logger.warn({ file, err: err.message }, 'No se pudo leer plan reciente');
     }

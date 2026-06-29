@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
-// ---- Esquema Zod (validacion semantica tras recibir la respuesta) ----
+// ---- Esquema Zod ----
 const mealSchema = z.object({
   name: z.string().min(1),
   ingredients: z.array(z.string().min(1)).min(1),
   steps: z.array(z.string().min(1)).min(1),
   protein_estimate: z.string().min(1),
+});
+
+const snackSchema = z.object({
+  name: z.string().min(1),
+  ingredients: z.array(z.string().min(1)).min(1),
+  description: z.string().min(1),
 });
 
 const exerciseBlockSchema = z.object({
@@ -18,8 +24,10 @@ export const dailyPlanSchema = z.object({
   title: z.string().min(1),
   date: z.string().min(1),
   nutrition: z.object({
-    meal1: mealSchema,
-    meal2: mealSchema,
+    breakfast_man: mealSchema,   // puede incluir huevos
+    breakfast_woman: mealSchema, // SIN huevos
+    lunch: mealSchema,           // compartido
+    snack: snackSchema,          // algo/merienda compartida
     lactation_extra: z.object({
       name: z.string().min(1),
       ingredients: z.array(z.string().min(1)).min(1),
@@ -37,9 +45,7 @@ export const dailyPlanSchema = z.object({
   safety_note: z.string().min(1),
 });
 
-// ---- JSON Schema para OpenAI Structured Outputs (strict) ----
-// Debe coincidir con el Zod de arriba. strict => todo en "required" y
-// additionalProperties:false en cada objeto.
+// ---- JSON Schema para Structured Outputs (OpenAI) / modo json_object (Groq) ----
 const strArray = { type: 'array', items: { type: 'string' } };
 
 const mealJsonSchema = {
@@ -52,6 +58,17 @@ const mealJsonSchema = {
     protein_estimate: { type: 'string' },
   },
   required: ['name', 'ingredients', 'steps', 'protein_estimate'],
+};
+
+const snackJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    name: { type: 'string' },
+    ingredients: strArray,
+    description: { type: 'string' },
+  },
+  required: ['name', 'ingredients', 'description'],
 };
 
 const exerciseBlockJsonSchema = {
@@ -78,8 +95,10 @@ export const dailyPlanJsonSchema = {
         type: 'object',
         additionalProperties: false,
         properties: {
-          meal1: mealJsonSchema,
-          meal2: mealJsonSchema,
+          breakfast_man: mealJsonSchema,
+          breakfast_woman: mealJsonSchema,
+          lunch: mealJsonSchema,
+          snack: snackJsonSchema,
           lactation_extra: {
             type: 'object',
             additionalProperties: false,
@@ -91,7 +110,7 @@ export const dailyPlanJsonSchema = {
             required: ['name', 'ingredients', 'reason'],
           },
         },
-        required: ['meal1', 'meal2', 'lactation_extra'],
+        required: ['breakfast_man', 'breakfast_woman', 'lunch', 'snack', 'lactation_extra'],
       },
       walking: {
         type: 'object',
@@ -109,15 +128,9 @@ export const dailyPlanJsonSchema = {
       safety_note: { type: 'string' },
     },
     required: [
-      'title',
-      'date',
-      'nutrition',
-      'walking',
-      'strength_man',
-      'strength_woman',
-      'shopping_list',
-      'hydration',
-      'safety_note',
+      'title', 'date', 'nutrition', 'walking',
+      'strength_man', 'strength_woman',
+      'shopping_list', 'hydration', 'safety_note',
     ],
   },
 };
