@@ -66,17 +66,28 @@ async function sendViaBrevo({ from, to, subject, html, text }) {
 }
 
 /**
- * Envia el correo a ambos destinatarios usando el proveedor configurado.
+ * Envia un correo a un destinatario concreto.
  */
-export async function sendEmail({ subject, html, text }) {
+async function sendOne({ to, subject, html, text }) {
   const from = config.email.from;
-  const to = [config.email.toMan, config.email.toWoman];
   const result =
     config.email.provider === 'brevo'
-      ? await sendViaBrevo({ from, to, subject, html, text })
-      : await sendViaSmtp({ from, to, subject, html, text });
-  logger.info({ provider: config.email.provider, id: result.id }, 'Correo enviado');
+      ? await sendViaBrevo({ from, to: [to], subject, html, text })
+      : await sendViaSmtp({ from, to: [to], subject, html, text });
+  logger.info({ provider: config.email.provider, to, id: result.id }, 'Correo enviado');
   return { messageId: result.id };
+}
+
+/**
+ * Envia los dos correos personalizados (hombre y mujer) por separado.
+ * emailMan y emailWoman son el resultado de renderEmailMan/renderEmailWoman.
+ */
+export async function sendEmails({ emailMan, emailWoman }) {
+  const [resMan, resWoman] = await Promise.all([
+    sendOne({ to: config.email.toMan, ...emailMan }),
+    sendOne({ to: config.email.toWoman, ...emailWoman }),
+  ]);
+  return { man: resMan, woman: resWoman };
 }
 
 /**

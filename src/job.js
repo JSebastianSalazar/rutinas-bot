@@ -1,7 +1,7 @@
 import { generateDailyPlan } from './generateDailyPlan.js';
 import { generateImages } from './generateImages.js';
-import { renderEmail } from './emailTemplate.js';
-import { sendEmail, sendAlert } from './sendEmail.js';
+import { renderEmailMan, renderEmailWoman } from './emailTemplate.js';
+import { sendEmails, sendAlert } from './sendEmail.js';
 import { savePlan, loadPlan } from './store.js';
 import { todayInTimezone, weekdayInTimezone } from './config.js';
 import { logger } from './logger.js';
@@ -31,11 +31,12 @@ export async function runDailyJob({ force = false } = {}) {
       await savePlan(date, { plan, images, generatedAt: new Date().toISOString() });
     }
 
-    const email = renderEmail(plan, images);
-    const info = await sendEmail(email);
+    const emailMan = renderEmailMan(plan, images);
+    const emailWoman = renderEmailWoman(plan, images);
+    const info = await sendEmails({ emailMan, emailWoman });
 
-    logger.info({ date, messageId: info.messageId }, 'Job diario completado');
-    return { ok: true, date, messageId: info.messageId };
+    logger.info({ date, man: info.man.messageId, woman: info.woman.messageId }, 'Job diario completado');
+    return { ok: true, date, man: info.man.messageId, woman: info.woman.messageId };
   } catch (err) {
     logger.error({ date, err: err.message, stack: err.stack }, 'Job diario FALLO');
     await sendAlert(`El job del ${date} fallo: ${err.message}`);

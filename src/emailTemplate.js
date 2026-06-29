@@ -48,10 +48,8 @@ function strengthBlock(block) {
     ${list(block.cooldown)}`;
 }
 
-export function renderEmail(plan, images = {}) {
-  const subject = `${plan.title} - ${plan.date}`;
-
-  const html = `<!DOCTYPE html>
+function baseHtml(plan, headerColor, greeting, sectionsHtml) {
+  return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
@@ -59,29 +57,16 @@ export function renderEmail(plan, images = {}) {
     <tr><td align="center">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
 
-        <tr><td style="background:#10b981;padding:28px 24px;">
+        <tr><td style="background:${headerColor};padding:28px 24px;">
           <h1 style="margin:0;font-size:22px;color:#ffffff;">${esc(plan.title)}</h1>
-          <p style="margin:6px 0 0 0;font-size:14px;color:#d1fae5;">${esc(plan.date)}</p>
+          <p style="margin:4px 0 0 0;font-size:15px;color:rgba(255,255,255,0.9);">${esc(greeting)}</p>
+          <p style="margin:6px 0 0 0;font-size:13px;color:rgba(255,255,255,0.7);">${esc(plan.date)}</p>
         </td></tr>
 
-        ${section('Comida 1', meal(plan.nutrition.meal1) + image(images.meal, 'Comida del dia'))}
-        ${section('Comida 2', meal(plan.nutrition.meal2))}
-        ${section('Refuerzo opcional para lactancia', `
-          <div style="background:#fef3c7;border-radius:12px;padding:16px;">
-            <h3 style="margin:0 0 4px 0;font-size:16px;color:#111827;">${esc(plan.nutrition.lactation_extra.name)}</h3>
-            <p style="margin:0 0 8px 0;font-size:13px;color:#92400e;">${esc(plan.nutrition.lactation_extra.reason)}</p>
-            ${list(plan.nutrition.lactation_extra.ingredients)}
-          </div>`)}
-
-        ${section('Caminata diaria', `
-          <p style="margin:0 0 6px 0;font-weight:600;color:#111827;">${esc(plan.walking.goal)}</p>
-          <p style="margin:0;color:#374151;">${esc(plan.walking.instructions)}</p>`)}
-
-        ${section('Fuerza - Hombre', strengthBlock(plan.strength_man) + image(images.strengthMan, 'Rutina de fuerza hombre'))}
-        ${section('Fuerza segura - Mujer (lactancia/postparto)', strengthBlock(plan.strength_woman) + image(images.strengthWoman, 'Rutina suave mujer'))}
+        ${sectionsHtml}
 
         ${section('Hidratacion', `<p style="margin:0;color:#374151;">${esc(plan.hydration)}</p>`)}
-        ${section('Lista de compra', list(plan.shopping_list))}
+        ${section('Lista de compra del dia', list(plan.shopping_list))}
 
         ${section('Aviso de seguridad', `
           <div style="background:#fee2e2;border-radius:12px;padding:16px;">
@@ -98,16 +83,71 @@ export function renderEmail(plan, images = {}) {
   </table>
 </body>
 </html>`;
+}
 
+/**
+ * Email para el HOMBRE:
+ * - Comidas compartidas
+ * - Rutina de fuerza masculina
+ * - Caminata
+ * - SIN seccion de lactancia
+ */
+export function renderEmailMan(plan, images = {}) {
+  const subject = `Tu plan del dia - ${plan.date}`;
+  const sectionsHtml = `
+    ${section('Comida 1', meal(plan.nutrition.meal1) + image(images.meal, 'Comida del dia'))}
+    ${section('Comida 2', meal(plan.nutrition.meal2))}
+    ${section('Caminata diaria', `
+      <p style="margin:0 0 6px 0;font-weight:600;color:#111827;">${esc(plan.walking.goal)}</p>
+      <p style="margin:0;color:#374151;">${esc(plan.walking.instructions)}</p>`)}
+    ${section('Tu rutina de fuerza', strengthBlock(plan.strength_man) + image(images.strengthMan, 'Rutina de fuerza'))}
+  `;
+  const html = baseHtml(plan, '#1d4ed8', 'Tu plan de hoy', sectionsHtml);
   const text =
-    `${plan.title} - ${plan.date}\n\n` +
-    `COMIDA 1: ${plan.nutrition.meal1.name}\n` +
-    `COMIDA 2: ${plan.nutrition.meal2.name}\n` +
-    `REFUERZO LACTANCIA: ${plan.nutrition.lactation_extra.name}\n\n` +
+    `TU PLAN DEL DIA - ${plan.date}\n\n` +
+    `COMIDA 1: ${plan.nutrition.meal1.name} (${plan.nutrition.meal1.protein_estimate})\n` +
+    `COMIDA 2: ${plan.nutrition.meal2.name} (${plan.nutrition.meal2.protein_estimate})\n\n` +
     `CAMINATA: ${plan.walking.goal} - ${plan.walking.instructions}\n\n` +
+    `FUERZA:\n${plan.strength_man.exercises.join('\n')}\n\n` +
     `HIDRATACION: ${plan.hydration}\n\n` +
     `LISTA DE COMPRA: ${plan.shopping_list.join(', ')}\n\n` +
     `SEGURIDAD: ${plan.safety_note}\n\n${MEDICAL_DISCLAIMER}`;
+  return { subject, html, text };
+}
 
+/**
+ * Email para la MUJER:
+ * - Comidas compartidas
+ * - Refuerzo de lactancia
+ * - Rutina de fuerza segura postparto
+ * - Caminata
+ */
+export function renderEmailWoman(plan, images = {}) {
+  const subject = `Tu plan del dia - ${plan.date}`;
+  const sectionsHtml = `
+    ${section('Comida 1', meal(plan.nutrition.meal1) + image(images.meal, 'Comida del dia'))}
+    ${section('Comida 2', meal(plan.nutrition.meal2))}
+    ${section('Refuerzo para lactancia', `
+      <div style="background:#fef3c7;border-radius:12px;padding:16px;">
+        <h3 style="margin:0 0 4px 0;font-size:16px;color:#111827;">${esc(plan.nutrition.lactation_extra.name)}</h3>
+        <p style="margin:0 0 8px 0;font-size:13px;color:#92400e;">${esc(plan.nutrition.lactation_extra.reason)}</p>
+        ${list(plan.nutrition.lactation_extra.ingredients)}
+      </div>`)}
+    ${section('Caminata diaria', `
+      <p style="margin:0 0 6px 0;font-weight:600;color:#111827;">${esc(plan.walking.goal)}</p>
+      <p style="margin:0;color:#374151;">${esc(plan.walking.instructions)}</p>`)}
+    ${section('Tu rutina segura (postparto/lactancia)', strengthBlock(plan.strength_woman) + image(images.strengthWoman, 'Rutina suave'))}
+  `;
+  const html = baseHtml(plan, '#10b981', 'Tu plan de hoy', sectionsHtml);
+  const text =
+    `TU PLAN DEL DIA - ${plan.date}\n\n` +
+    `COMIDA 1: ${plan.nutrition.meal1.name} (${plan.nutrition.meal1.protein_estimate})\n` +
+    `COMIDA 2: ${plan.nutrition.meal2.name} (${plan.nutrition.meal2.protein_estimate})\n\n` +
+    `REFUERZO LACTANCIA: ${plan.nutrition.lactation_extra.name} - ${plan.nutrition.lactation_extra.reason}\n\n` +
+    `CAMINATA: ${plan.walking.goal} - ${plan.walking.instructions}\n\n` +
+    `RUTINA SUAVE:\n${plan.strength_woman.exercises.join('\n')}\n\n` +
+    `HIDRATACION: ${plan.hydration}\n\n` +
+    `LISTA DE COMPRA: ${plan.shopping_list.join(', ')}\n\n` +
+    `SEGURIDAD: ${plan.safety_note}\n\n${MEDICAL_DISCLAIMER}`;
   return { subject, html, text };
 }
